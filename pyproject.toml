@@ -1,0 +1,24 @@
+[project]
+name = "adossi-fred-william-rl-summative"
+version = "0.1.0"
+description = "RL simulation where a small farmer learns to grow maize in Chad"
+authors = [
+    { name = "Adossi Fred William", email = "f.adossi@alustudent.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "gymnasium>=1.4.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.4.6",
+    "pandas>=3.1.1",
+    "torch>=2.15.0",
+    "torchrl>=0.15.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
