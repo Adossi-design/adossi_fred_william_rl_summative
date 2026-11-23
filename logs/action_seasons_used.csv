@@ -1,0 +1,9 @@
+Action,DQN,REINFORCE,PPO,A2C
+Wait,100,100,100,100
+Drone scout,71,4,0,0
+Spray fungicide,100,100,100,72
+Irrigate,0,0,0,0
+Apply fertilizer,100,100,100,100
+Remove flagged plants,0,0,0,0
+Drone scout + remove,0,0,0,0
+Weed the field,8,100,100,100

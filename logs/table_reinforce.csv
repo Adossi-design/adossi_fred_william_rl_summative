@@ -1,0 +1,11 @@
+Exp,Learning rate,Gamma,Entropy coef,Return norm,Seasons/update,Hidden,What it tests,First run,Second run,Second-run seed,Mean reward (2-seed)
+1,0.001,0.99,0.01,True,10,"(64, 64)",Baseline,25.87,25.87,2,25.87 ± 0.00
+2,0.0001,0.99,0.01,True,10,"(64, 64)",Slow learning,18.99,20.98,3,19.98 ± 1.41
+3,0.005,0.99,0.01,True,10,"(64, 64)",Fast learning,27.4,27.89,2,27.64 ± 0.35
+4,0.001,0.9,0.01,True,10,"(64, 64)",Short horizon,16.04,16.04,2,16.04 ± 0.00
+5,0.001,0.99,0.0,True,10,"(64, 64)",No entropy bonus,25.82,26.22,2,26.02 ± 0.28
+6,0.001,0.99,0.05,True,10,"(64, 64)",Strong entropy bonus,25.79,25.58,2,25.69 ± 0.15
+7,0.001,0.99,0.01,False,10,"(64, 64)",No baseline: noisier?,20.88,22.4,2,21.64 ± 1.07
+8,0.001,0.99,0.01,True,1,"(64, 64)",Single-season updates,16.04,16.04,2,16.04 ± 0.00
+9,0.001,0.99,0.01,True,50,"(64, 64)",Large batches,25.91,25.85,2,25.88 ± 0.04
+10,0.001,0.99,0.01,True,10,"(128, 128)",Bigger network,27.55,26.95,2,27.25 ± 0.42

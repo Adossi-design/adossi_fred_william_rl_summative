@@ -1,0 +1,11 @@
+Exp,Learning rate,Gamma,Buffer size,Batch size,Epsilon end,Decay share,Target update,What it tests,First run,Second run,Second-run seed,Mean reward (2-seed)
+1,0.001,0.99,50000,64,0.05,0.5,500,Baseline,19.7,15.63,2,17.66 ± 2.88
+2,0.0001,0.99,50000,64,0.05,0.5,500,Slow learning,13.34,13.39,3,13.37 ± 0.04
+3,0.005,0.99,50000,64,0.05,0.5,500,"Fast learning, unstable?",19.71,18.63,2,19.17 ± 0.76
+4,0.001,0.9,50000,64,0.05,0.5,500,Short-sighted: ignores harvest?,15.74,15.66,2,15.70 ± 0.06
+5,0.001,0.95,50000,64,0.05,0.5,500,Medium horizon,13.89,15.01,2,14.45 ± 0.80
+6,0.001,0.99,5000,64,0.05,0.5,500,Small replay memory,16.44,17.01,2,16.72 ± 0.40
+7,0.001,0.99,50000,256,0.05,0.5,500,Large batch,21.03,18.71,2,19.87 ± 1.64
+8,0.001,0.99,50000,64,0.05,0.1,500,Explores too briefly?,16.06,15.81,2,15.93 ± 0.17
+9,0.001,0.99,50000,64,0.2,0.5,500,Keeps exploring a lot,15.37,21.8,2,18.58 ± 4.54
+10,0.001,0.99,50000,64,0.05,0.5,50,Target network updated often,25.14,22.97,2,24.06 ± 1.53
