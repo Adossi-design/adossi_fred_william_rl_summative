@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maize Season Simulator</title>
+  <style>
+    /* Colours and fonts used across the page. */
+    :root {
+      --bg: #0d1410;
+      --fg: #eef3ea;
+      --muted: #a9b8a6;
+      --accent: #e6b23a;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--fg);
+    }
+
+    #wrap {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    /* The 3D scene and the panels on top of it. */
+    #stage {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1280px;
+      height: 720px;
+      transform-origin: 0 0;
+    }
+
+    #c {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    #c:active {
+      cursor: grabbing;
+    }
+
+    /* Every panel is a small dark glass panel. */
+    .g {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .lab {
+      font: 600 10px Inter, system-ui, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .val {
+      font: 600 16px Inter, system-ui, sans-serif;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .row {
+      position: absolute;
+      display: flex;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      min-width: 64px;
+    }
+
+    #tlrow {
+      left: 16px;
+      top: 16px;
+      gap: 6px;
+    }
+
+    #tlrow .chip {
+      padding: 8px 10px;
+      min-width: 56px;
+    }
+
+    #tr {
+      right: 16px;
+      top: 16px;
+    }
+
+    #pill {
+      position: absolute;
+      left: 50%;
+      top: 16px;
+      transform: translateX(-50%);
+      padding: 10px 14px;
+      text-align: center;
+      min-width: 260px;
+    }
+
+    #pill .val {
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+
+    #br {
+      right: 16px;
+      bottom: 16px;
+    }
+
+    .tile {
+      padding: 10px 14px;
+      min-width: 150px;
+      text-align: right;
+    }
+
+    .tile .val {
+      font-size: 22px;
+    }
+
+    .tile .sub {
+      font: 500 11px Inter, system-ui, sans-serif;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .neg {
+      color: #ff9b8a;
+    }
+
+    .pos {
+      color: #7fe0a0;
+    }
+
+    /* The 12 numbers the farmer sees, with a small bar for each. */
+    /* The farmer panel and the camera pad are in one column, so the pad always sits just below the panel. */
+    #rightcol {
+      position: absolute;
+      right: 16px;
+      top: 84px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    #side {
+      width: 250px;
+      padding: 12px 14px;
+      font-size: 11px;
+    }
+
+    .o {
+      display: grid;
+      grid-template-columns: 116px 1fr 30px;
+      align-items: center;
+      gap: 6px;
+      margin: 3px 0;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .o b {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      position: relative;
+      display: block;
+    }
+
+    .o b i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: #7fe0a0;
+      border-radius: 3px;
+    }
+
+    .o span:last-child {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .key {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .key div {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .key i {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    /* The panel on the left explains each week, with the notes, the chances and the judge. */
+    #notes {
+      position: absolute;
+      left: 16px;
+      top: 84px;
+      width: 290px;
+      padding: 10px 13px;
+      font-size: 11.5px;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, 0.88);
+      box-sizing: border-box;
+    }
+
+    #notes .lab {
+      margin: 0 0 4px;
+    }
+
+    #notes .part + .part {
+      margin-top: 8px;
+    }
+
+    #notes ul {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    #notes li {
+      margin: 1px 0;
+    }
+
+    /* The chances are one short line, and the first action is bold and coloured. */
+    #notes .chances {
+      font-variant-numeric: tabular-nums;
+    }
+
+    #notes .chances b {
+      color: #e6b23a;
+    }
+
+    #notes .jv {
+      font-weight: 700;
+      font-size: 12.5px;
+      margin-bottom: 2px;
+    }
+
+    .lv-good {
+      color: #7fe0a0;
+    }
+
+    .lv-ok {
+      color: #e6b23a;
+    }
+
+    .lv-poor {
+      color: #ff9b8a;
+    }
+
+    #notes .better {
+      margin: 4px 0 2px;
+      padding: 5px 8px;
+      border: 1px solid rgba(127, 224, 160, 0.35);
+      background: rgba(127, 224, 160, 0.12);
+      border-radius: 7px;
+    }
+
+    #notes .better b,
+    #notes .would b {
+      color: #7fe0a0;
+    }
+
+    #notes .sofar {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    #notes .would {
+      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* The camera pad is in the middle of the space between the observation panel and the reward tiles. */
+    #campad {
+      display: grid;
+      grid-template-columns: repeat(3, 30px);
+      grid-template-rows: repeat(3, 30px) 6px 30px;
+      gap: 4px;
+      padding: 8px;
+    }
+
+    #campad button {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+      color: #fff;
+      font: 600 15px Inter, system-ui, sans-serif;
+      cursor: pointer;
+      padding: 0;
+      user-select: none;
+      touch-action: none;
+    }
+
+    #campad button:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    #campad button:active {
+      background: #e6b23a;
+      color: #1b1505;
+    }
+
+    #campad .zi {
+      grid-column: 1;
+      grid-row: 5;
+    }
+
+    #campad .zo {
+      grid-column: 3;
+      grid-row: 5;
+    }
+
+    #campad .ctr {
+      font-size: 13px;
+    }
+
+    /* The controls panel is at the bottom left. */
+    #ctl {
+      position: absolute;
+      left: 16px;
+      bottom: 40px;
+      width: 230px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #ctl select {
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 7px 8px;
+      font: 500 12px Inter, system-ui, sans-serif;
+      width: 100%;
+    }
+
+    /* The list that opens under the select has the same dark green as the select box. */
+    #ctl select option,
+    #ctl select optgroup {
+      background: #1e2413;
+      color: #fff;
+    }
+
+    #ctl .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    #ctl button.b {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 7px;
+      color: #fff;
+      padding: 8px;
+      font: 600 12px Inter, system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    #ctl button.b:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    #ctl button.b:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    #ctl button[hidden] {
+      display: none;
+    }
+
+    #ctl button.go {
+      background: #10b981;
+      border-color: #10b981;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    #ctl button.go.stop {
+      background: #ef4444;
+      border-color: #ef4444;
+    }
+
+    #ctl .seg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    #ctl .seg button {
+      background: transparent;
+      border: 0;
+      color: #cfd8cc;
+      padding: 7px 4px;
+      font: 600 12px Inter, system-ui, sans-serif;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #ctl .seg button.on {
+      background: #e6b23a;
+      color: #1b1505;
+    }
+
+    /* The line under the pill shows what the chosen model suggests. */
+    #advice {
+      position: absolute;
+      left: 50%;
+      top: 84px;
+      transform: translateX(-50%);
+      padding: 8px 16px;
+      white-space: nowrap;
+      display: none;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    #advice.on {
+      display: block;
+    }
+
+    #advice b {
+      color: #7fe0a0;
+    }
+
+    /* The 8 action buttons are at the bottom, in two rows of 4, next to the controls panel. */
+    #actions {
+      position: absolute;
+      left: 278px;
+      bottom: 40px;
+      display: none;
+      grid-template-columns: repeat(4, 144px);
+      gap: 5px;
+      padding: 6px;
+    }
+
+    #actions.on {
+      display: grid;
+    }
+
+    #actions button {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 9px;
+      color: #fff;
+      padding: 7px 8px;
+      cursor: pointer;
+      font: 600 12px Inter, system-ui, sans-serif;
+      min-width: 0;
+      text-align: center;
+    }
+
+    #actions button small {
+      display: block;
+      font: 500 10px Inter, system-ui, sans-serif;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 2px;
+    }
+
+    #actions button:hover:not(:disabled) {
+      background: rgba(16, 185, 129, 0.35);
+      border-color: #10b981;
+    }
+
+    #actions button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    #actions button.rec {
+      border-color: #7fe0a0;
+      box-shadow: 0 0 0 2px rgba(127, 224, 160, 0.45);
+    }
+
+    /* The card at the end of the season dims the scene. */
+    #dim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+    }
+
+    #card {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      padding: 24px 26px;
+      display: none;
+      background: rgba(10, 10, 10, 0.85);
+    }
+
+    #card h2 {
+      font: 800 24px Inter, system-ui, sans-serif;
+      margin: 6px 0 2px;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+
+    #card .who {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    #card .acc {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      font-size: 14px;
+    }
+
+    #card .acc span:nth-child(odd) {
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    #card .acc span:nth-child(even) {
+      text-align: right;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #card .tot {
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 8px;
+    }
+
+    #card .btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    #card button {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px;
+      font: 700 13px Inter, system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    #card .rp {
+      background: #10b981;
+      color: #fff;
+    }
+
+    #card .cl {
+      background: #334155;
+      color: #fff;
+    }
+
+    #card .acc.cmp {
+      grid-template-columns: 1fr auto auto;
+      gap: 7px 16px;
+    }
+
+    #card .acc.cmp span:nth-child(odd),
+    #card .acc.cmp span:nth-child(even) {
+      text-align: right;
+      color: inherit;
+      font-weight: 600;
+    }
+
+    #card .acc.cmp span:nth-child(3n+1) {
+      text-align: left;
+      color: rgba(255, 255, 255, 0.65);
+      font-weight: 400;
+    }
+
+    #card .acc.cmp .h {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    #card .note {
+      margin: 12px 0 0;
+      font-size: 11px;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+    }
+
+    #card .verdict {
+      text-align: center;
+      margin: 14px 0 0;
+      color: #7fe0a0;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="stage">
+      <canvas id="c" width="1280" height="720"></canvas>
+
+      <div class="row" id="tlrow">
+        <div class="g chip"><div class="lab">Week</div><div class="val" id="vWeek">0 / 18</div></div>
+        <div class="g chip"><div class="lab">Growth stage</div><div class="val" id="vStage">Planting</div></div>
+        <div class="g chip"><div class="lab">Who chooses</div><div class="val" id="vPol">PPO</div></div>
+        <div class="g chip"><div class="lab">Good decisions</div><div class="val" id="vGood">0 / 0</div></div>
+      </div>
+
+      <div class="g" id="pill"><div class="lab">This week</div><div class="val" id="vAct">Season starts</div></div>
+
+      <div class="row" id="tr">
+        <div class="g chip"><div class="lab">Money left</div><div class="val" id="vBudget">60,000 XAF</div></div>
+        <div class="g chip"><div class="lab">Sick plants found</div><div class="val" id="vDet">0%</div></div>
+      </div>
+
+      <div class="row" id="br">
+        <div class="g tile"><div class="lab">This week's score</div><div class="val" id="vWr">0 XAF</div><div class="sub" id="vWrs">score 0.00</div></div>
+        <div class="g tile"><div class="lab">Total score</div><div class="val" id="vTr">0 XAF</div><div class="sub" id="vTrs">score 0.00</div></div>
+      </div>
+
+      <div id="rightcol">
+      <div class="g" id="side">
+        <div class="lab" style="margin-bottom: 6px">What the farmer sees</div>
+        <div id="obs"></div>
+        <div class="key">
+          <div><i style="background: #3f8f37"></i>Healthy</div>
+          <div><i style="background: #8fb8a8"></i>Water problem</div>
+          <div><i style="background: #a59a7e"></i>Disease spots</div>
+          <div><i style="background: #6b3a1c"></i>Very sick plant</div>
+          <div><i style="background: #e0aa30"></i>Ripe</div>
+          <div><i style="background: #9fd04a"></i>Weeds</div>
+          <div><i style="border: 2px solid #ffc83a; border-radius: 50%; width: 7px; height: 7px"></i>Marked by drone</div>
+        </div>
+      </div>
+
+      <div class="g" id="campad" aria-label="Camera">
+        <span></span><button data-c="up" title="Look from higher">▲</button><span></span>
+        <button data-c="left" title="Turn left">◀</button><button data-c="home" class="ctr" title="Reset view">⟲</button><button data-c="right" title="Turn right">▶</button>
+        <span></span><button data-c="down" title="Look from lower">▼</button><span></span>
+        <button data-c="in" class="zi" title="Zoom in">＋</button><button data-c="out" class="zo" title="Zoom out">－</button>
+      </div>
+      </div>
+
+      <div class="g" id="notes">
+        <div class="part">
+          <div class="lab">What the farmer notices</div>
+          <ul id="nNotes"></ul>
+        </div>
+        <div class="part" id="nChanceBox">
+          <div class="lab" id="nChanceTitle">The farmer is sure of</div>
+          <div class="chances" id="nChances"></div>
+        </div>
+        <div class="part">
+          <div class="lab">Expert judge</div>
+          <div id="nJudge"></div>
+        </div>
+      </div>
+
+      <div class="g" id="advice"></div>
+
+      <div class="g" id="ctl">
+        <div class="lab">Mode</div>
+        <div class="seg"><button id="mWatch" class="on">Agent plays</button><button id="mPlay">I play</button></div>
+        <div class="lab" id="polLab">Farmer</div>
+        <select id="pol" aria-label="Farmer">
+          <optgroup label="Trained farmers">
+            <option value="ppo">PPO (best)</option>
+            <option value="a2c">A2C</option>
+            <option value="reinforce">REINFORCE</option>
+            <option value="dqn">DQN</option>
+          </optgroup>
+          <optgroup label="Simple farmers to compare">
+            <option value="expert">Expert rules</option>
+            <option value="calendar">Old calendar habit</option>
+            <option value="wait">Wait only</option>
+            <option value="random">Random</option>
+          </optgroup>
+        </select>
+        <div class="two"><button class="b" id="next">Next week</button><button class="b" id="restart">Restart</button></div>
+        <button class="b go" id="play">▶ AUTO RUN</button>
+      </div>
+
+      <div class="g" id="actions"></div>
+      <div id="dim"></div>
+      <div class="g" id="card"></div>
+    </div>
+  </div>
+
+  <script src="three.min.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>
