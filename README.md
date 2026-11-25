@@ -85,7 +85,24 @@ I kept money as the only score on purpose. I did not give points for following t
 
 ## Setup
 
-You only need [uv](https://docs.astral.sh/uv/). It installs Python and every package for you. Run this once in the project folder.
+You only need [uv](https://docs.astral.sh/uv/). It installs Python and every package for you.
+
+**1. Install uv** (once). On Windows, open PowerShell and run:
+
+```
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+On Mac or Linux, run `curl -LsSf https://astral.sh/uv/install.sh | sh`. Then close the terminal and open it again.
+
+**2. Download the project.**
+
+```
+git clone https://github.com/Adossi-design/adossi_fred_william_rl_summative.git
+cd adossi_fred_william_rl_summative
+```
+
+**3. Install everything** (once). This downloads Python 3.11 if it is missing and every package, so the first time takes a few minutes.
 
 ```
 uv sync
